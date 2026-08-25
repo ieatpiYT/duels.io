@@ -1,2 +1,2 @@
 # duels.io
-1v1 Multiplayer web game
+A browser-based multiplayer 1v1 arena game

@@ -1,0 +1,17 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Production outputs
+server/dist/
+client/dist/
+
+# Operating system files
+.DS_Store
+Thumbs.db

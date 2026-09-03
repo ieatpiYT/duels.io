@@ -1,8 +1,6 @@
-/*
-main.ts
-*/
-
-import {Application, Graphics} from 'pixi.js';
+import {Application} from 'pixi.js';
+import {Player} from './game/Player';
+import {Input} from './game/Input';
 
 let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const playButton = document.getElementById('playButton') as HTMLButtonElement;
@@ -12,6 +10,7 @@ const app = new Application();
 
 async function initGame() 
 {
+    // Initialize PixiJS game canvas
     await app.init({
         canvas: canvas,
         resizeTo: window,
@@ -19,13 +18,16 @@ async function initGame()
         autoDensity: true,
         backgroundColor: 0x1a1a1a
     })
-
-    const player = new Graphics()
-    .circle(0, 0, 20)
-    .fill({color: 'red'})
+    
+    const player = new Player();
+    const input = new Input();
 
     player.x = app.screen.width / 2;
     player.y = app.screen.height / 2;
+    
+    app.ticker.add(() => {
+        player.move(input);
+    })
 
     playButton.addEventListener('click', () => {
         menuOverlay.classList.add('hidden');

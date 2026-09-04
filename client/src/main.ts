@@ -1,6 +1,7 @@
 import {Application} from 'pixi.js';
 import {Player} from './game/Player';
 import {Input} from './game/Input';
+import {Network} from './network/Network';
 
 let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const playButton = document.getElementById('playButton') as HTMLButtonElement;
@@ -21,6 +22,7 @@ async function initGame()
     
     const player = new Player();
     const input = new Input();
+    const network = new Network();
 
     player.x = app.screen.width / 2;
     player.y = app.screen.height / 2;

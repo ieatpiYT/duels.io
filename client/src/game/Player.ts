@@ -7,7 +7,7 @@ import {Input} from './Input'
 
 export class Player extends Graphics
 {
-    speed = 5;
+    speed = 2;
 
     constructor()
     {

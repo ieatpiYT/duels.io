@@ -25,6 +25,11 @@ export class Network
 
                 console.log('My player ID:', this.id);
             }
+
+            if (packet.type === 'players')
+            {
+                console.log('Players:', packet.players)
+            }
         });
 
         this.socket.addEventListener('close', () => {

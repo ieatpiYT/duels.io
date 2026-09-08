@@ -1,3 +1,7 @@
+/*
+main.ts
+*/
+
 import {Application} from 'pixi.js';
 import {Player} from './game/Player';
 import {Input} from './game/Input';
@@ -22,6 +26,8 @@ async function initGame()
     
     const player = new Player();
     const input = new Input();
+
+    // TODO: Only register player with the server after pressing Play button
     const network = new Network();
 
     player.x = app.screen.width / 2;
@@ -29,6 +35,16 @@ async function initGame()
     
     app.ticker.add(() => {
         player.move(input);
+
+        network.sendPosition(player.x, player.y);
+
+        for (const otherPlayer of network.players.values())
+        {
+            if (!otherPlayer.parent)
+            {
+                app.stage.addChild(otherPlayer);
+            }
+        }
     })
 
     playButton.addEventListener('click', () => {

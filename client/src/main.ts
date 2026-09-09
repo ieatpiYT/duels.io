@@ -15,7 +15,6 @@ const app = new Application();
 
 async function initGame() 
 {
-    // Initialize PixiJS game canvas
     await app.init({
         canvas: canvas,
         resizeTo: window,
@@ -32,8 +31,15 @@ async function initGame()
 
     player.x = app.screen.width / 2;
     player.y = app.screen.height / 2;
+
+    let playing: boolean = false
     
     app.ticker.add(() => {
+        if (!playing)
+        {
+            return;
+        }
+        
         player.move(input);
 
         network.sendPosition(player.x, player.y);
@@ -48,6 +54,8 @@ async function initGame()
     })
 
     playButton.addEventListener('click', () => {
+        playing = true;
+        
         menuOverlay.classList.add('hidden');
 
         app.stage.addChild(player);

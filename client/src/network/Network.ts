@@ -53,7 +53,7 @@ export class Network
                     player = new Graphics();
 
                     player.circle(0, 0, 20);
-                    player.fill({ color: 'red' });
+                    player.fill({color: 'red'});
 
                     this.players.set(playerId, player);
                 }
@@ -62,6 +62,23 @@ export class Network
                 player.y = y;
             }
         });
+    }
+
+    join(): void
+    {
+        if (this.socket.readyState !== WebSocket.OPEN)
+        {
+            return;
+        }
+
+        // 1 byte packet
+        // 3 = join
+        const buffer = new ArrayBuffer(1);
+        const view = new DataView(buffer);
+
+        view.setUint8(0, 3);
+
+        this.socket.send(buffer);
     }
 
     sendPosition(x: number, y: number)
@@ -75,7 +92,6 @@ export class Network
         // 4 bytes x
         // 4 bytes y
         // total = 9 bytes
-
         const buffer = new ArrayBuffer(9);
         const view = new DataView(buffer);
 

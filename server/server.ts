@@ -22,25 +22,9 @@ let nextId = 1;
 wss.on('connection', (socket) => {
     const id = nextId++;
 
-    const player: Player = 
-    {
-        id, 
-        x: 0,
-        y: 0,
-        socket
-    }
-
-    players.set(id, player);
+    let player: Player | null = null;
 
     console.log(`Client connected: ${id}`);
-
-    const initBuffer = new ArrayBuffer(5);
-    const initView = new DataView(initBuffer);
-
-    initView.setUint8(0, 0); // Init
-    initView.setUint32(1, id) // Player ID
-    
-    socket.send(initBuffer);
 
     socket.on('message', (data) => {
         const buffer = data as Buffer;
@@ -53,7 +37,36 @@ wss.on('connection', (socket) => {
 
         const packetType = view.getUint8(0);
 
-        if (packetType === 1)
+        if (packetType === 3)
+        {
+            // Prevent same connection from joining twice
+            if (player)
+            {
+                return;
+            }
+
+            player = 
+            {
+                id, 
+                x: 300,
+                y: 300,
+                socket
+            }
+
+            players.set(id, player);
+
+            const initBuffer = new ArrayBuffer(5);
+            const initView = new DataView(initBuffer);
+
+            initView.setUint8(0, 0); // Init
+            initView.setUint32(1, id) // Player ID
+            
+            socket.send(initBuffer);
+
+            console.log(`Player joined: ${id}`);
+        }
+
+        if (packetType === 1 && player)
         {
             player.x = view.getFloat32(1);
             player.y = view.getFloat32(5);
@@ -67,7 +80,6 @@ wss.on('connection', (socket) => {
     });
 });
 
-// Send all player positions 20 times per second
 setInterval(() => {
     for (const player of players.values())
     {
@@ -77,7 +89,6 @@ setInterval(() => {
         // 4 bytes = x
         // 4 bytes = y
         // total = 13 bytes per player
-
         const buffer = new ArrayBuffer(13);
         const view = new DataView(buffer);
 

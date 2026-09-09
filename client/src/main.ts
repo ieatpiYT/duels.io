@@ -25,8 +25,6 @@ async function initGame()
     
     const player = new Player();
     const input = new Input();
-
-    // TODO: Only register player with the server after pressing Play button
     const network = new Network();
 
     player.x = app.screen.width / 2;
@@ -54,8 +52,10 @@ async function initGame()
     })
 
     playButton.addEventListener('click', () => {
+        network.join();
+
         playing = true;
-        
+
         menuOverlay.classList.add('hidden');
 
         app.stage.addChild(player);

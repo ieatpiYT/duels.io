@@ -44,7 +44,7 @@ async function initGame()
 
         for (const otherPlayer of network.players.values())
         {
-            if (!otherPlayer.parent)
+            if (otherPlayer && !otherPlayer.parent)
             {
                 app.stage.addChild(otherPlayer);
             }

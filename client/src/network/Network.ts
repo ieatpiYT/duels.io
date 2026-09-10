@@ -60,6 +60,21 @@ export class Network
 
                 player.x = x;
                 player.y = y;
+                
+            }
+
+            if (packetType === 4)
+            {
+                const disconnectedID = view.getUint32(1);
+                const player = this.players.get(disconnectedID);
+
+                if (player)
+                {
+                    player.removeFromParent();
+                    player.destroy();
+                    this.players.delete(disconnectedID);
+                    console.log(`Player ${disconnectedID} left the game.`);
+                }
             }
         });
     }

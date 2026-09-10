@@ -74,9 +74,32 @@ wss.on('connection', (socket) => {
     });
     
     socket.on('close', () => {
+        if (!player)
+        {
+            console.log(`Client disconnected: ${id}`);
+        }
+
         players.delete(id);
 
-        console.log(`Client disconnected: ${id}`);
+        const buffer = new ArrayBuffer(5);
+        const view = new DataView(buffer);
+
+        view.setUint8(0, 4);
+        view.setUint32(1, id);
+
+        for (const otherPlayer of players.values())
+        {
+            if (otherPlayer.socket.readyState === WebSocket.OPEN)
+            {
+                otherPlayer.socket.send(buffer);
+            }
+        }
+
+        socket.removeAllListeners();
+
+        player = null;
+        
+        console.log(`Player disconnected: ${id}`);
     });
 });
 
@@ -92,10 +115,10 @@ setInterval(() => {
         const buffer = new ArrayBuffer(13);
         const view = new DataView(buffer);
 
-        view.setUint8(0, 2); 
-        view.setUint32(1, player.id); 
-        view.setFloat32(5, player.x); 
-        view.setFloat32(9, player.y); 
+        view.setUint8(0, 2); // Packet type
+        view.setUint32(1, player.id); // Player ID
+        view.setFloat32(5, player.x); // x position
+        view.setFloat32(9, player.y); // y position
 
         for (const otherPlayer of players.values())
         {

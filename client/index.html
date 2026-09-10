@@ -7,69 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Duels.io</title>
 
-    <style>
-      #gameCanvas 
-      {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 1;
-      }
-
-      .flex-container 
-      {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh; 
-      }
-
-      .play-button
-      {
-        width: 250px;         
-        height: 80px;        
-        font-size: 2rem;     
-        cursor: pointer;
-        font-family: sans-serif;
-        font-weight: bold;
-        border-radius: 12px; 
-        border: none;
-        background-color: #4caf50; 
-        color: white;
-        box-shadow: 0 5px 0 #438642;
-        background-color:#67c167;
-        font-size: 35px
-      }
-
-      .menu-overlay 
-      {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 2; /* Higher than canvas */
-        background-color: rgba(236, 56, 56, 0.848); /* Dimmed background */
-        transition: opacity 0.3s ease;
-      }
-
-      .hidden
-      {
-        display: none !important
-      }
-
-      .play-button:active
-      {
-        transform: translateY(4px);
-        box-shadow: 0 1px 0 #438642;
-      }
-
-    </style>
   </head>
   <body>
     <div id="menuOverlay" class="menu-overlay">

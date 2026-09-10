@@ -28,7 +28,6 @@ export class Player extends Graphics
         if (input.keys["KeyA"] || input.keys["ArrowLeft"]) dx -= 1;
         if (input.keys["KeyD"] || input.keys["ArrowRight"]) dx += 1;
 
-
         // Normalize vector to prevent diagonal speed boost
         if (dx !== 0 && dy !== 0) 
         {

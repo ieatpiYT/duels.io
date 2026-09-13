@@ -103,7 +103,7 @@ export class Network
             return;
         }
 
-        // 1 byte packet type
+        // packet type === 1
         // 4 bytes x
         // 4 bytes y
         // total = 9 bytes

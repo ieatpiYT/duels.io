@@ -6,6 +6,7 @@ import {Application} from 'pixi.js';
 import {Player} from './game/Player';
 import {Input} from './game/Input';
 import {Network} from './network/Network';
+import {Lobby} from './game/Lobby';
 
 let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const playButton = document.getElementById('playButton') as HTMLButtonElement;
@@ -23,12 +24,13 @@ async function initGame()
         backgroundColor: 0x1a1a1a
     })
     
+    const lobby = new Lobby();
     const player = new Player();
     const input = new Input();
     const network = new Network();
 
-    player.x = app.screen.width / 2;
-    player.y = app.screen.height / 2;
+    player.x = 500;
+    player.y = 500;
 
     let playing: boolean = false
     
@@ -58,6 +60,7 @@ async function initGame()
 
         menuOverlay.classList.add('hidden');
 
+        app.stage.addChild(lobby);
         app.stage.addChild(player);
     })
 }

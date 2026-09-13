@@ -48,8 +48,8 @@ wss.on('connection', (socket) => {
             player = 
             {
                 id, 
-                x: 300,
-                y: 300,
+                x: 500,
+                y: 500,
                 socket
             }
 
@@ -66,6 +66,7 @@ wss.on('connection', (socket) => {
             console.log(`Player joined: ${id}`);
         }
 
+        // Position receiver
         if (packetType === 1 && player)
         {
             player.x = view.getFloat32(1);

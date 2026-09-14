@@ -1,66 +1,71 @@
-      #gameCanvas 
-      {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 1;
-      }
+#gameCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
 
-      #hitext
-      {
-        position: absolute;
-        z-index: 3;
-      }
+#hitext {
+  position: absolute;
+  z-index: 3;
+}
 
-      .flex-container 
-      {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh; 
-      }
+.flex-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
-      .play-button
-      {
-        width: 250px;         
-        height: 80px;        
-        font-size: 2rem;     
-        cursor: pointer;
-        font-family: sans-serif;
-        font-weight: bold;
-        border-radius: 12px; 
-        border: none;
-        background-color: #4caf50; 
-        color: white;
-        box-shadow: 0 5px 0 #438642;
-        background-color:#67c167;
-        font-size: 35px
-      }
+.play-button {
+  width: 250px;
+  height: 80px;
+  font-size: 35px;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-weight: bold;
+  border-radius: 12px;
+  border: none;
+  background-color: #67c167;
+  color: white;
+  box-shadow: 0 5px 0 #438642;
+}
 
-      .menu-overlay 
-      {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 2; 
-        background-color: rgba(236, 56, 56, 0.8); 
-        transition: opacity 0.3s ease;
-      }
+.play-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #438642;
+}
 
-      .hidden
-      {
-        display: none !important
-      }
+.menu-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  background: linear-gradient(135deg, #ec3838, #ff7e5f, #feb47b, #6a11cb, #2575fc);
+  background-size: 300% 300%;
+  animation: professionalColorShift 10s ease infinite;
+  transition: opacity 0.3s ease;
+}
 
-      .play-button:active
-      {
-        transform: translateY(4px);
-        box-shadow: 0 1px 0 #438642;
-      }
+.hidden {
+  display: none !important;
+}
+
+@keyframes professionalColorShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

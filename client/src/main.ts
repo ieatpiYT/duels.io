@@ -2,7 +2,7 @@
 main.ts
 */
 
-import {Application} from 'pixi.js';
+import {Application, Container} from 'pixi.js';
 import {Player} from './game/Player';
 import {Input} from './game/Input';
 import {Network} from './network/Network';
@@ -24,10 +24,14 @@ async function initGame()
         backgroundColor: 0x1a1a1a
     })
     
+    const world = new Container();
     const lobby = new Lobby();
     const player = new Player();
     const input = new Input();
     const network = new Network();
+
+    world.addChild(lobby);
+    world.addChild(player);
 
     player.x = 500;
     player.y = 500;
@@ -42,13 +46,16 @@ async function initGame()
         
         player.move(input);
 
+        world.x = app.screen.width / 2 - player.x;
+        world.y = app.screen.height / 2 - player.y;
+
         network.sendPosition(player.x, player.y);
 
         for (const otherPlayer of network.players.values())
         {
             if (otherPlayer && !otherPlayer.parent)
             {
-                app.stage.addChild(otherPlayer);
+                world.addChild(otherPlayer);
             }
         }
     })
@@ -60,8 +67,7 @@ async function initGame()
 
         menuOverlay.classList.add('hidden');
 
-        app.stage.addChild(lobby);
-        app.stage.addChild(player);
+        app.stage.addChild(world);
     })
 }
 

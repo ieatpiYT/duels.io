@@ -2,10 +2,10 @@
 Player.ts
 */
 
-import {Graphics} from "pixi.js";
+import {Container, Graphics} from "pixi.js";
 import {Input} from './Input'
 
-export class Player extends Graphics
+export class Player extends Container
 {
     speed = 2;
 
@@ -13,8 +13,21 @@ export class Player extends Graphics
     {
         super();
 
-        this.circle(0, 0, 20);
-        this.fill({color: 'brown'});
+        let body = new Graphics().circle(0, 0, 22)
+        .fill({color: 'brown'})
+        .stroke({width: 2, color: 'black'});
+
+        let leftFist = new Graphics().circle(-25, 0, 8)
+        .fill('green')
+        .stroke({width: 2, color: 'black'});
+        leftFist.rotation = - Math.PI / 5;
+
+        let rightFist = new Graphics().circle(-25, 0, 8)
+        .fill('green')
+        .stroke({width: 2, color: 'black'});
+        rightFist.rotation = Math.PI / 5;
+
+        this.addChild(body, leftFist, rightFist);
     }
 
     move(input: Input): void

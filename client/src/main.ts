@@ -36,7 +36,7 @@ async function initGame()
     player.x = 500;
     player.y = 500;
 
-    let playing: boolean = false
+    let playing: boolean = false;
     
     app.ticker.add(() => {
         if (!playing)
@@ -45,6 +45,12 @@ async function initGame()
         }
         
         player.move(input);
+
+        const globalMouse = app.renderer.events.pointer.global;
+        const worldMouseX = globalMouse.x - world.x;
+        const worldMouseY = globalMouse.y - world.y;
+
+        player.lookAt(worldMouseX, worldMouseY);
 
         world.x = app.screen.width / 2 - player.x;
         world.y = app.screen.height / 2 - player.y;

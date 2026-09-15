@@ -7,27 +7,37 @@ import {Input} from './Input'
 
 export class Player extends Container
 {
-    speed = 2;
+    speed = 5;
+    leftFist: Graphics;
+    rightFist: Graphics;
+    body: Graphics;
 
     constructor()
     {
         super();
 
-        let body = new Graphics().circle(0, 0, 22)
+        this.body = new Graphics().circle(0, 0, 22)
         .fill({color: 'brown'})
         .stroke({width: 2, color: 'black'});
 
-        let leftFist = new Graphics().circle(-25, 0, 8)
+        this.leftFist = new Graphics().circle(0, 0, 8)
         .fill('green')
         .stroke({width: 2, color: 'black'});
-        leftFist.rotation = - Math.PI / 5;
+        this.leftFist.x = 20;
+        this.leftFist.y = -15;
 
-        let rightFist = new Graphics().circle(-25, 0, 8)
+        this.rightFist = new Graphics().circle(0, 0, 8)
         .fill('green')
         .stroke({width: 2, color: 'black'});
-        rightFist.rotation = Math.PI / 5;
+        this.rightFist.x = 20;
+        this.rightFist.y = 15; 
 
-        this.addChild(body, leftFist, rightFist);
+        this.addChild(this.body, this.leftFist, this.rightFist);
+    }
+
+    lookAt(targetX: number, targetY: number): void
+    {
+        this.rotation = Math.atan2(targetY - this.y, targetX - this.x);
     }
 
     move(input: Input): void
@@ -52,4 +62,3 @@ export class Player extends Container
         this.y += dy * this.speed;
     }
 }
-

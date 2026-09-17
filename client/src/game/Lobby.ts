@@ -11,7 +11,7 @@ export class Lobby extends Container
         super();
 
         const background = new Graphics();
-        background.rect(0, 0, 1000, 1000);
+        background.rect(0, 0, 2000, 2000);
         background.fill({color: 'green'});
         this.addChild(background);
 
@@ -21,7 +21,7 @@ export class Lobby extends Container
         this.addChild(spawnArea);
 
         const intermissionPad = new Graphics();
-        intermissionPad.rect(100, 400, 200, 200);
+        intermissionPad.rect(300, 0, 400, 200);
         intermissionPad.fill({color: 'white'});
         intermissionPad.stroke({width: 5, color: 'black'});
         this.addChild(intermissionPad);

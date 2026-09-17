@@ -7,7 +7,7 @@ import {Input} from './Input'
 
 export class Player extends Container
 {
-    speed = 5;
+    speed = 3;
     leftFist: Graphics;
     rightFist: Graphics;
     body: Graphics;
@@ -60,5 +60,8 @@ export class Player extends Container
 
         this.x += dx * this.speed;
         this.y += dy * this.speed;
+
+        this.x = Math.max(0, Math.min(2000, this.x));
+        this.y = Math.max(0, Math.min(2000, this.y));
     }
 }

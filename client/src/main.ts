@@ -52,8 +52,17 @@ async function initGame()
 
         player.lookAt(worldMouseX, worldMouseY);
 
-        world.x = app.screen.width / 2 - player.x;
-        world.y = app.screen.height / 2 - player.y;
+        const halfWidth = app.screen.width / 2;
+        const halfHeight = app.screen.height / 2;
+
+        let cameraX = halfWidth - player.x;
+        let cameraY = halfHeight - player.y;
+
+        cameraX = Math.min(0, Math.max(app.screen.width - 2000, cameraX));
+        cameraY = Math.min(0, Math.max(app.screen.height - 2000, cameraY));
+
+        world.x = cameraX;
+        world.y = cameraY;
 
         network.sendPosition(player.x, player.y);
 

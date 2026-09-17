@@ -79,6 +79,11 @@ export class Network
         });
     }
 
+    renderFists()
+    {
+        
+    }
+
     join(): void
     {
         if (this.socket.readyState !== WebSocket.OPEN)

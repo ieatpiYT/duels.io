@@ -13,6 +13,7 @@ export class Lobby extends Container
         const background = new Graphics();
         background.rect(0, 0, 2000, 2000);
         background.fill({color: 'green'});
+        background.stroke({width: 16, color: 0xcc0000, alignment: 1});
         this.addChild(background);
 
         const spawnArea = new Graphics();

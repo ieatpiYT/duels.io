@@ -61,7 +61,10 @@ export class Player extends Container
         this.x += dx * this.speed;
         this.y += dy * this.speed;
 
-        this.x = Math.max(0, Math.min(2000, this.x));
-        this.y = Math.max(0, Math.min(2000, this.y));
+        const radius = 22;
+        const mapSize = 2000;
+
+        this.x = Math.max(radius, Math.min(mapSize - radius, this.x));
+        this.y = Math.max(radius, Math.min(mapSize - radius, this.y));
     }
 }

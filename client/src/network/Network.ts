@@ -40,6 +40,7 @@ export class Network
                 const playerId = view.getUint32(1);
                 const x = view.getFloat32(5);
                 const y = view.getFloat32(9);
+                const rotation = view.getFloat32(13)
 
                 if (playerId === this.id)
                 {
@@ -57,7 +58,7 @@ export class Network
 
                 remotePlayer.x = x;
                 remotePlayer.y = y;
-                
+                remotePlayer.rotation = rotation;
             }
 
             if (packetType === 4)
@@ -101,7 +102,7 @@ export class Network
         this.socket.send(buffer);
     }
 
-    sendPosition(x: number, y: number)
+    sendPosition(x: number, y: number, rotation: number)
     {
         if (this.socket.readyState !== WebSocket.OPEN)
         {
@@ -112,12 +113,13 @@ export class Network
         // 4 bytes x
         // 4 bytes y
         // total = 9 bytes
-        const buffer = new ArrayBuffer(9);
+        const buffer = new ArrayBuffer(13);
         const view = new DataView(buffer);
 
         view.setUint8(0, 1);
         view.setFloat32(1, x);
         view.setFloat32(5, y);
+        view.setFloat32(9, rotation)
 
         this.socket.send(buffer);
     }

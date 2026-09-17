@@ -64,7 +64,7 @@ async function initGame()
         world.x = cameraX;
         world.y = cameraY;
 
-        network.sendPosition(player.x, player.y);
+        network.sendPosition(player.x, player.y, player.rotation);
 
         for (const otherPlayer of network.players.values())
         {

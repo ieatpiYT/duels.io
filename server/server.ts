@@ -9,6 +9,7 @@ type Player =
     id: number;
     x: number;
     y: number;
+    rotation: number;
     socket: WebSocket;
 };
 
@@ -50,6 +51,7 @@ wss.on('connection', (socket) => {
                 id, 
                 x: 500,
                 y: 500,
+                rotation: 0,
                 socket
             }
 
@@ -71,6 +73,7 @@ wss.on('connection', (socket) => {
         {
             player.x = view.getFloat32(1);
             player.y = view.getFloat32(5);
+            player.rotation = view.getFloat32(9);
         }
     });
     
@@ -113,14 +116,15 @@ setInterval(() => {
         // 4 bytes = x
         // 4 bytes = y
         // total = 13 bytes per player
-        const buffer = new ArrayBuffer(13);
+        const buffer = new ArrayBuffer(17);
         const view = new DataView(buffer);
 
         view.setUint8(0, 2); // Packet type
         view.setUint32(1, player.id); // Player ID
         view.setFloat32(5, player.x); // x position
         view.setFloat32(9, player.y); // y position
-
+        view.setFloat32(13, player.rotation);
+        
         for (const otherPlayer of players.values())
         {
             if (otherPlayer.socket.readyState === WebSocket.OPEN)

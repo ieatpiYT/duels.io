@@ -7,14 +7,18 @@ import {Input} from './Input'
 
 export class Player extends Container
 {
-    speed = 3;
+    speed = 4;
     leftFist: Graphics;
     rightFist: Graphics;
     body: Graphics;
 
-    constructor()
+    constructor(x: number, y: number, speed: number)
     {
         super();
+
+        this.x = x;
+        this.y = y;
+        this.speed = speed;
 
         this.body = new Graphics().circle(0, 0, 22)
         .fill({color: 'brown'})

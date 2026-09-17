@@ -2,13 +2,13 @@
 Network.ts
 */
 
-import {Graphics} from 'pixi.js';
+import {Player} from '../game/Player';
 
 export class Network
 {
     private socket: WebSocket;
     public id: number | null = null;
-    public players = new Map<number, Graphics>();
+    public players = new Map<number, Player>();
 
     constructor()
     {
@@ -46,20 +46,17 @@ export class Network
                     return;
                 }
 
-                let player = this.players.get(playerId);
+                let remotePlayer = this.players.get(playerId);
 
-                if (!player)
+                if (!remotePlayer)
                 {
-                    player = new Graphics();
+                    remotePlayer = new Player(x, y, 4);
 
-                    player.circle(0, 0, 20);
-                    player.fill({color: 'red'});
-
-                    this.players.set(playerId, player);
+                    this.players.set(playerId, remotePlayer);
                 }
 
-                player.x = x;
-                player.y = y;
+                remotePlayer.x = x;
+                remotePlayer.y = y;
                 
             }
 
@@ -81,7 +78,10 @@ export class Network
 
     renderFists()
     {
-        
+        if (this.socket.readyState !== WebSocket.OPEN)
+        {
+            return;
+        }
     }
 
     join(): void

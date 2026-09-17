@@ -26,7 +26,7 @@ async function initGame()
     
     const world = new Container();
     const lobby = new Lobby();
-    const player = new Player();
+    const player = new Player(0, 0, 4);
     const input = new Input();
     const network = new Network();
 

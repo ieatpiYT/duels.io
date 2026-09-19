@@ -4,20 +4,19 @@ Player.ts
 
 import {Container, Graphics} from "pixi.js";
 import {Input} from './Input'
+import type {PlayerState} from "./PlayerState";
 
 export class Player extends Container
 {
-    speed = 4;
+    speed: number;
     leftFist: Graphics;
     rightFist: Graphics;
     body: Graphics;
 
-    constructor(x: number, y: number, speed: number)
+    constructor(speed = 4)
     {
         super();
 
-        this.x = x;
-        this.y = y;
         this.speed = speed;
 
         this.body = new Graphics().circle(0, 0, 22)
@@ -37,6 +36,23 @@ export class Player extends Container
         this.rightFist.y = 15; 
 
         this.addChild(this.body, this.leftFist, this.rightFist);
+    }
+
+    applyState(state: PlayerState): void
+    {
+        this.x = state.x;
+        this.y = state.y;
+        this.rotation = state.rotation;
+    }
+
+    getState(id: number): PlayerState
+    {
+        return {
+            id,
+            x: this.x,
+            y: this.y,
+            rotation: this.rotation
+        }
     }
 
     lookAt(targetX: number, targetY: number): void

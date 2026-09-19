@@ -1,3 +1,7 @@
+/*
+PlayerState.ts
+*/
+
 export interface PlayerState
 {
     id: number;

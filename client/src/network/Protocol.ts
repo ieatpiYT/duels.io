@@ -10,7 +10,7 @@ export const PacketType = {
     PlayerDisconnected: 4
 } as const;
 
-export function joinPacket(): ArrayBuffer
+export function createJoinPacket(): ArrayBuffer
 {
     const buffer = new ArrayBuffer(1);
     const view = new DataView(buffer);
@@ -20,7 +20,7 @@ export function joinPacket(): ArrayBuffer
     return buffer;
 }
 
-export function initPacket(id: number): ArrayBuffer
+export function createInitPacket(id: number): ArrayBuffer
 {
     const buffer = new ArrayBuffer(5);
     const view = new DataView(buffer);
@@ -29,10 +29,9 @@ export function initPacket(id: number): ArrayBuffer
     view.setUint32(1, id);
 
     return buffer;
-
 }
 
-export function positionPacket(x: number, y: number, rotation: number): ArrayBuffer
+export function createPositionPacket(x: number, y: number, rotation: number): ArrayBuffer
 {
     const buffer = new ArrayBuffer(13);
     const view = new DataView(buffer);
@@ -45,7 +44,7 @@ export function positionPacket(x: number, y: number, rotation: number): ArrayBuf
     return buffer;
 }
 
-export function playerUpdatePacket(id: number, x: number, y: number, rotation: number): ArrayBuffer
+export function createPlayerUpdatePacket(id: number, x: number, y: number, rotation: number): ArrayBuffer
 {
     const buffer = new ArrayBuffer(17);
     const view = new DataView(buffer);
@@ -59,7 +58,7 @@ export function playerUpdatePacket(id: number, x: number, y: number, rotation: n
     return buffer;
 }
 
-export function disconnectFunction(id: number): ArrayBuffer
+export function createDisconnectPacket(id: number): ArrayBuffer
 {
     const buffer = new ArrayBuffer(5);
     const view = new DataView(buffer);
@@ -69,5 +68,5 @@ export function disconnectFunction(id: number): ArrayBuffer
     view.setUint32(1, id);
 
     return buffer;
-
 }
+

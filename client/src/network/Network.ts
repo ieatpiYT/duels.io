@@ -99,6 +99,23 @@ export class Network
                     }
                     break;
 
+                case PacketType.PadState:
+                {
+                    const count = view.getUint8(1);
+
+                    this.callbacks.onPadState?.(count);
+
+                    break;
+                }
+
+                case PacketType.MatchFound:
+                {
+                    const roomId = view.getUint32(1);
+
+                    this.callbacks.onMatchFound?.(roomId);
+
+                    break;
+                }
         }
     }
 

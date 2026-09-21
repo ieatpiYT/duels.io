@@ -7,7 +7,9 @@ export const PacketType = {
     Position: 1,
     PlayerUpdate: 2,
     Join: 3,
-    PlayerDisconnected: 4
+    PlayerDisconnected: 4,
+    PadState: 5,
+    MatchFound: 6
 } as const;
 
 export function createJoinPacket(): ArrayBuffer
@@ -70,3 +72,24 @@ export function createDisconnectPacket(id: number): ArrayBuffer
     return buffer;
 }
 
+export function createPadStatePacket(count: number): ArrayBuffer 
+{
+    const buffer = new ArrayBuffer(2);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.PadState);
+    view.setUint8(1, count);
+
+    return buffer;
+}
+
+export function createMatchFoundPacket(roomId: number): ArrayBuffer 
+{
+    const buffer = new ArrayBuffer(5);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.MatchFound);
+    view.setUint32(1, roomId);
+
+    return buffer;
+}

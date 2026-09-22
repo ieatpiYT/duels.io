@@ -4,6 +4,17 @@ server.ts
 
 import {WebSocketServer, WebSocket} from 'ws';
 
+enum PacketType
+{
+    Init = 0,
+    Position = 1,
+    PlayerUpdate = 2,
+    Join = 3,
+    PlayerDisconnected = 4,
+    PadState = 5,
+    MatchFound = 6
+}
+
 type Player = 
 {
     id: number;

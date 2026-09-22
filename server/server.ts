@@ -38,10 +38,13 @@ const wss = new WebSocketServer({port: 8080});
 console.log('WebSocket server running on port 8080');
 
 const players = new Map<number, Player>();
-let nextId = 1;
+const rooms = new Map<number, Room>();
+
+let nextPlayerIs = 1;
+let nextRoomId = 1;
 
 wss.on('connection', (socket) => {
-    const id = nextId++;
+    const id = nextPlayerIs++;
 
     let player: Player | null = null;
 

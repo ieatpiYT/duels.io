@@ -122,6 +122,21 @@ function createMatchFoundPacket(roomId: number): ArrayBuffer
     return buffer;
 }
 
+function isOnIntermissionPad(player: Player): boolean 
+{
+    const radius = 22;
+
+    return (
+        player.x + radius >= INTERMISSION_PAD.x &&
+        player.x - radius <=
+            INTERMISSION_PAD.x + INTERMISSION_PAD.width &&
+        player.y + radius >= INTERMISSION_PAD.y &&
+        player.y - radius <=
+            INTERMISSION_PAD.y + INTERMISSION_PAD.height
+    );
+}
+
+
 wss.on('connection', (socket) => {
     const id = nextPlayerIs++;
 

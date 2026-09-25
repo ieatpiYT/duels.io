@@ -43,6 +43,85 @@ const rooms = new Map<number, Room>();
 let nextPlayerIs = 1;
 let nextRoomId = 1;
 
+const INTERMISSION_PAD =
+{
+    x: 300,
+    y: 0,
+    width: 400,
+    height: 200
+};
+
+const MATCH_SIZE = 2;
+
+const PAD_TIME = 3000;
+
+let padEnteredAt: number | null = null;
+
+function send(socket: WebSocket, buffer: ArrayBuffer): void
+{
+    if (socket.readyState === WebSocket.OPEN)
+    {
+        socket.send(buffer);
+    }
+}
+
+function createInitPacket(id: number): ArrayBuffer 
+{
+    const buffer = new ArrayBuffer(5);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.Init);
+    view.setUint32(1, id);
+
+    return buffer;
+}
+
+function createPlayerUpdatePacket(player: Player): ArrayBuffer {
+    const buffer = new ArrayBuffer(17);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.PlayerUpdate);
+    view.setUint32(1, player.id);
+    view.setFloat32(5, player.x);
+    view.setFloat32(9, player.y);
+    view.setFloat32(13, player.rotation);
+
+    return buffer;
+}
+
+function createDisconnectPacket(id: number): ArrayBuffer 
+{
+    const buffer = new ArrayBuffer(5);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.PlayerDisconnected);
+    view.setUint32(1, id);
+
+    return buffer;
+}
+
+function createPadStatePacket(count: number): ArrayBuffer 
+{
+    const buffer = new ArrayBuffer(2);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.PadState);
+    view.setUint8(1, count);
+
+    return buffer;
+}
+
+function createMatchFoundPacket(roomId: number): ArrayBuffer 
+{
+    const buffer = new ArrayBuffer(5);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.MatchFound);
+    view.setUint32(1, roomId);
+
+    return buffer;
+}
+
 wss.on('connection', (socket) => {
     const id = nextPlayerIs++;
 

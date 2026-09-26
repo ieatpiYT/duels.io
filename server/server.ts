@@ -22,6 +22,8 @@ type Player =
     y: number;
     rotation: number;
     socket: WebSocket;
+    roomId: number | null;
+    onIntermissionPad: boolean;
 };
 
 type Room = 
@@ -40,7 +42,7 @@ console.log('WebSocket server running on port 8080');
 const players = new Map<number, Player>();
 const rooms = new Map<number, Room>();
 
-let nextPlayerIs = 1;
+let nextPlayerId = 1;
 let nextRoomId = 1;
 
 const INTERMISSION_PAD =
@@ -136,9 +138,71 @@ function isOnIntermissionPad(player: Player): boolean
     );
 }
 
+function createRoom(matchPlayers: Player[]): void 
+{
+    const roomId = nextRoomId++;
+
+    const room: Room = 
+    {
+        id: roomId,
+        players: new Set(matchPlayers.map(player => player.id)),
+        map: "arena"
+    };
+
+    rooms.set(roomId, room);
+
+    for (const player of matchPlayers) 
+    {
+        player.roomId = roomId;
+        player.onIntermissionPad = false;
+
+        send(player.socket,createMatchFoundPacket(roomId));
+    }
+
+    console.log(`Created room ${roomId} with ${matchPlayers.length} players.`);
+}
+
+function checkIntermissionPad(): void 
+{
+    const waitingPlayers = [...players.values()].filter(
+        player =>
+            player.roomId === null &&
+            player.onIntermissionPad
+    );
+
+    if (waitingPlayers.length < MATCH_SIZE) 
+    {
+        padEnteredAt = null;
+        return;
+    }
+
+    // Two players on pad
+    if (padEnteredAt === null) 
+    {
+        padEnteredAt = Date.now();
+
+        console.log("Matchmaking countdown started.");
+
+        return;
+    }
+
+    const elapsed = Date.now() - padEnteredAt;
+
+    if (elapsed < PAD_TIME) 
+    {
+        return;
+    }
+
+    // Three seconds have passed.
+    const matchPlayers = waitingPlayers.slice(0, MATCH_SIZE);
+
+    createRoom(matchPlayers);
+
+    padEnteredAt = null;
+}
 
 wss.on('connection', (socket) => {
-    const id = nextPlayerIs++;
+    const id = nextPlayerId++;
 
     let player: Player | null = null;
 
@@ -155,7 +219,7 @@ wss.on('connection', (socket) => {
 
         const packetType = view.getUint8(0);
 
-        if (packetType === 3)
+        if (packetType === PacketType.Join)
         {
             // Prevent same connection from joining twice
             if (player)
@@ -169,28 +233,30 @@ wss.on('connection', (socket) => {
                 x: 500,
                 y: 500,
                 rotation: 0,
-                socket
+                socket,
+                roomId: null,
+                onIntermissionPad: false
             }
 
             players.set(id, player);
+            send(socket, createInitPacket(id));
 
-            const initBuffer = new ArrayBuffer(5);
-            const initView = new DataView(initBuffer);
+            console.log( `Player joined: ${id}` );
 
-            initView.setUint8(0, 0); // Init
-            initView.setUint32(1, id) // Player ID
-            
-            socket.send(initBuffer);
-
-            console.log(`Player joined: ${id}`);
+            return;
         }
 
         // Position receiver
-        if (packetType === 1 && player)
+        if (packetType === PacketType.Position && player)
         {
             player.x = view.getFloat32(1);
             player.y = view.getFloat32(5);
             player.rotation = view.getFloat32(9);
+
+            if (player.roomId === null)
+            {
+                player.onIntermissionPad = isOnIntermissionPad(player);
+            }
         }
     });
     
@@ -198,25 +264,36 @@ wss.on('connection', (socket) => {
         if (!player)
         {
             console.log(`Client disconnected: ${id}`);
+            return;
         }
 
+        const oldRoomId = player.roomId;
         players.delete(id);
 
-        const buffer = new ArrayBuffer(5);
-        const view = new DataView(buffer);
+        const packet = createDisconnectPacket(id);
 
-        view.setUint8(0, 4);
-        view.setUint32(1, id);
-
-        for (const otherPlayer of players.values())
+        for (const other of players.values())
         {
-            if (otherPlayer.socket.readyState === WebSocket.OPEN)
+            if (other.roomId === oldRoomId && other.socket.readyState === WebSocket.OPEN)
             {
-                otherPlayer.socket.send(buffer);
+                send(other.socket,packet);
             }
         }
 
-        socket.removeAllListeners();
+        if (oldRoomId !== null)
+        {
+            const room = rooms.get(oldRoomId);
+
+            if (room)
+            {
+                room.players.delete(id);
+
+                if (room.players.size === 0)
+                {
+                    rooms.delete(oldRoomId);
+                }
+            }
+        }
 
         player = null;
         
@@ -224,30 +301,63 @@ wss.on('connection', (socket) => {
     });
 });
 
+// Network tick
 setInterval(() => {
     for (const player of players.values())
     {
-        // packet:
-        // 1 byte  = packet type
-        // 4 bytes = player ID
-        // 4 bytes = x
-        // 4 bytes = y
-        // total = 13 bytes per player
-        const buffer = new ArrayBuffer(17);
-        const view = new DataView(buffer);
-
-        view.setUint8(0, 2); // Packet type
-        view.setUint32(1, player.id); // Player ID
-        view.setFloat32(5, player.x); // x position
-        view.setFloat32(9, player.y); // y position
-        view.setFloat32(13, player.rotation);
-        
-        for (const otherPlayer of players.values())
+        // Players without rooms remain in lobby
+        if (player.roomId == null)
         {
-            if (otherPlayer.socket.readyState === WebSocket.OPEN)
+            continue;
+        }
+
+        const packet = createPlayerUpdatePacket(player);
+        const room = rooms.get(player.roomId);
+
+        if (!room)
+        {
+            continue;
+        }
+        
+        for (const playerId of room.players)
+        {
+            const recipient = players.get(playerId);
+
+            if (!recipient)
             {
-                otherPlayer.socket.send(buffer);
+                continue;
             }
+
+            send(recipient.socket, packet);
         }
     }
-}, 16);
+}, 50);
+
+
+// Matchmaking tick
+setInterval(() => {
+    for (const player of players.values())
+    {
+        if (player.roomId === null)
+        {
+            player.onIntermissionPad = isOnIntermissionPad(player);
+        }
+    }
+
+    const waitingPlayers = [...players.values()]
+                .filter(player =>
+                        player.roomId === null && player.onIntermissionPad
+                );
+
+    if (waitingPlayers.length > 0)
+    {
+        const packet = createPadStatePacket(waitingPlayers.length);
+        
+        for (const player of waitingPlayers)
+        {
+            send(player.socket, packet);
+        }
+    }
+
+    checkIntermissionPad();
+}, 50);

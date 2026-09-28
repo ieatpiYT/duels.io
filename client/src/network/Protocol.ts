@@ -2,7 +2,8 @@
 Protocol.ts
 */
 
-export const PacketType = {
+export const PacketType = 
+{
     Init: 0,
     Position: 1,
     PlayerUpdate: 2,

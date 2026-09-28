@@ -29,9 +29,7 @@ type Player =
 type Room = 
 {
     id: number;
-
     players: Set<number>;
-    
     map: string;
 }
 
@@ -65,6 +63,8 @@ const INTERMISSION_PAD =
 const MATCH_SIZE = 2;
 
 const PAD_TIME = 3000;
+
+const ARENA_SIZE = 1000;
 
 let padEnteredAt: number | null = null;
 
@@ -123,13 +123,17 @@ function createPadStatePacket(count: number): ArrayBuffer
     return buffer;
 }
 
-function createMatchFoundPacket(roomId: number): ArrayBuffer 
+function createMatchFoundPacket(roomId: number, spawnX: number, spawnY: number): ArrayBuffer 
 {
-    const buffer = new ArrayBuffer(5);
+    const buffer = new ArrayBuffer(13);
     const view = new DataView(buffer);
 
     view.setUint8(0, PacketType.MatchFound);
+
     view.setUint32(1, roomId);
+
+    view.setFloat32(5, spawnX);
+    view.setFloat32(9, spawnY);
 
     return buffer;
 }
@@ -140,11 +144,9 @@ function isOnIntermissionPad(player: Player): boolean
 
     return (
         player.x + radius >= INTERMISSION_PAD.x &&
-        player.x - radius <=
-            INTERMISSION_PAD.x + INTERMISSION_PAD.width &&
+        player.x - radius <= INTERMISSION_PAD.x + INTERMISSION_PAD.width &&
         player.y + radius >= INTERMISSION_PAD.y &&
-        player.y - radius <=
-            INTERMISSION_PAD.y + INTERMISSION_PAD.height
+        player.y - radius <= INTERMISSION_PAD.y + INTERMISSION_PAD.height
     );
 }
 
@@ -163,8 +165,15 @@ function createRoom(matchPlayers: Player[]): void
 
     const lobby = rooms.get(LOBBY_ROOM_ID);
 
-    for (const player of matchPlayers) 
+    for (let index = 0; index < matchPlayers.length; index++) 
     {
+        const player = matchPlayers[index];
+
+        if (!player)
+        {
+            continue;
+        }
+
         if (lobby)
         {
             lobby.players.delete(player.id);
@@ -175,7 +184,27 @@ function createRoom(matchPlayers: Player[]): void
         player.roomId = roomId;
         player.onIntermissionPad = false;
 
-        send(player.socket,createMatchFoundPacket(roomId));
+        let spawnX = 250;
+        let spawnY = 500;
+
+        if (index === 1)
+        {
+            spawnX = 750;
+            spawnY = 500;
+        }
+
+        player.x = spawnX;
+        player.y = spawnY;
+        player.rotation = 0;
+
+        send(
+            player.socket,
+            createMatchFoundPacket(
+                roomId,
+                spawnX,
+                spawnY
+            )
+        );
     }
 
     console.log(`Created room ${roomId} with ${matchPlayers.length} players.`);
@@ -191,14 +220,11 @@ function checkIntermissionPad(): void
 
     if (waitingPlayers.length < MATCH_SIZE) 
     {
-        // Someone left the pad before
-        // the countdown finished.
         padEnteredAt = null;
 
         return;
     }
 
-    // Two players on pad
     if (padEnteredAt === null) 
     {
         padEnteredAt = Date.now();
@@ -215,7 +241,6 @@ function checkIntermissionPad(): void
         return;
     }
 
-    // Three seconds have passed.
     const matchPlayers = waitingPlayers.slice(0, MATCH_SIZE);
 
     createRoom(matchPlayers);
@@ -232,7 +257,7 @@ wss.on('connection', (socket) => {
 
     socket.on('message', (data) => {
         const buffer = data as Buffer;
-        
+
         const view = new DataView(
             buffer.buffer,
             buffer.byteOffset,
@@ -243,7 +268,6 @@ wss.on('connection', (socket) => {
 
         if (packetType === PacketType.Join)
         {
-            // Prevent same connection from joining twice
             if (player)
             {
                 return;
@@ -271,12 +295,11 @@ wss.on('connection', (socket) => {
 
             send(socket, createInitPacket(id));
 
-            console.log( `Player joined: ${id}` );
+            console.log(`Player joined: ${id}`);
 
             return;
         }
 
-        // Position receiver
         if (packetType === PacketType.Position && player)
         {
             player.x = view.getFloat32(1);
@@ -289,7 +312,7 @@ wss.on('connection', (socket) => {
             }
         }
     });
-    
+
     socket.on('close', () => {
         if (!player)
         {
@@ -298,6 +321,7 @@ wss.on('connection', (socket) => {
         }
 
         const oldRoomId = player.roomId;
+
         players.delete(id);
 
         const room = rooms.get(oldRoomId);
@@ -322,35 +346,27 @@ wss.on('connection', (socket) => {
 
                 if (other.socket.readyState === WebSocket.OPEN)
                 {
-                    send(other.socket,packet);
+                    send(other.socket, packet);
                 }
             }
         }
 
-        if (
-            oldRoomId !== LOBBY_ROOM_ID &&
-            room &&
-            room.players.size === 0
-        )
+        if (oldRoomId !== LOBBY_ROOM_ID && room && room.players.size === 0)
         {
             rooms.delete(oldRoomId);
         }
 
-        // If a player disconnects while
-        // matchmaking is happening, make
-        // sure the countdown can restart.
         if (oldRoomId === LOBBY_ROOM_ID)
         {
             padEnteredAt = null;
         }
 
         player = null;
-        
+
         console.log(`Player disconnected: ${id}`);
     });
 });
 
-// Network tick
 setInterval(() => {
     for (const room of rooms.values())
     {
@@ -372,6 +388,11 @@ setInterval(() => {
 
             for (const recipientId of room.players)
             {
+                if (recipientId === player.id)
+                {
+                    continue;
+                }
+
                 const recipient = players.get(recipientId);
 
                 if (!recipient)
@@ -385,8 +406,6 @@ setInterval(() => {
     }
 }, 50);
 
-
-// Matchmaking tick
 setInterval(() => {
     for (const player of players.values())
     {
@@ -397,15 +416,16 @@ setInterval(() => {
     }
 
     const waitingPlayers = [...players.values()]
-                .filter(player =>
-                        player.roomId === LOBBY_ROOM_ID &&
-                        player.onIntermissionPad
-                );
+        .filter(
+            player =>
+                player.roomId === LOBBY_ROOM_ID &&
+                player.onIntermissionPad
+        );
 
     if (waitingPlayers.length > 0)
     {
         const packet = createPadStatePacket(waitingPlayers.length);
-        
+
         for (const player of waitingPlayers)
         {
             send(player.socket, packet);

@@ -1,6 +1,13 @@
-import type {PlayerState} from "../game/PlayerState";
-import {PacketType, createJoinPacket, createPositionPacket} from './Protocol';
+/*
+Network.ts
+*/
 
+import type {PlayerState} from "../game/PlayerState";
+import {
+    PacketType,
+    createJoinPacket,
+    createPositionPacket
+} from './Protocol';
 
 export interface NetworkCallbacks
 {
@@ -21,9 +28,10 @@ export interface NetworkCallbacks
     ) => void;
 
     onMatchFound?: (
-        roomId: number
+        roomId: number,
+        spawnX: number,
+        spawnY: number
     ) => void;
-
 }
 
 export class Network
@@ -58,58 +66,70 @@ export class Network
         switch (packetType)
         {
             case PacketType.Init:
-                {
-                    const id = view.getUint32(1);
-                    this.id = id;
-                    console.log("My player ID:", id);
-                    this.callbacks.onInit?.(id);   
-                }
-                break;
+            {
+                const id = view.getUint32(1);
 
+                this.id = id;
+
+                console.log("My player ID:", id);
+
+                this.callbacks.onInit?.(id);
+
+                break;
+            }
 
             case PacketType.PlayerUpdate:
+            {
+                const state: PlayerState = 
                 {
-                    const state: PlayerState = 
-                    {
-                        id: view.getUint32(1),
-                        x: view.getFloat32(5),
-                        y: view.getFloat32(9),
-                        rotation: view.getFloat32(13)
-                    }
+                    id: view.getUint32(1),
+                    x: view.getFloat32(5),
+                    y: view.getFloat32(9),
+                    rotation: view.getFloat32(13)
+                };
 
-                    if (state.id === this.id)
-                    {
-                        return;
-                    }
-
-                    this.callbacks.onPlayerUpdate?.(state);
-                    break;
+                if (state.id === this.id)
+                {
+                    return;
                 }
 
-                case PacketType.PlayerDisconnected:
-                    {
-                        const id = view.getUint32(1);
-                        this.callbacks.onPlayerDisconnected?.(id);
-                    }
-                    break;
+                this.callbacks.onPlayerUpdate?.(state);
 
-                case PacketType.PadState:
-                {
-                    const count = view.getUint8(1);
+                break;
+            }
 
-                    this.callbacks.onPadState?.(count);
+            case PacketType.PlayerDisconnected:
+            {
+                const id = view.getUint32(1);
 
-                    break;
-                }
+                this.callbacks.onPlayerDisconnected?.(id);
 
-                case PacketType.MatchFound:
-                {
-                    const roomId = view.getUint32(1);
+                break;
+            }
 
-                    this.callbacks.onMatchFound?.(roomId);
+            case PacketType.PadState:
+            {
+                const count = view.getUint8(1);
 
-                    break;
-                }
+                this.callbacks.onPadState?.(count);
+
+                break;
+            }
+
+            case PacketType.MatchFound:
+            {
+                const roomId = view.getUint32(1);
+                const spawnX = view.getFloat32(5);
+                const spawnY = view.getFloat32(9);
+
+                this.callbacks.onMatchFound?.(
+                    roomId,
+                    spawnX,
+                    spawnY
+                );
+
+                break;
+            }
         }
     }
 
@@ -119,7 +139,7 @@ export class Network
         {
             return;
         }
-        
+
         this.socket.send(createJoinPacket());
     }
 

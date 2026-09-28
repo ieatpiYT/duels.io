@@ -1,8 +1,3 @@
-/*
-Network.ts
-*/
-
-import {Player} from '../game/Player';
 import type {PlayerState} from "../game/PlayerState";
 import {PacketType, createJoinPacket, createPositionPacket} from './Protocol';
 
@@ -30,7 +25,6 @@ export interface NetworkCallbacks
     ) => void;
 
 }
-
 
 export class Network
 {

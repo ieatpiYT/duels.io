@@ -112,6 +112,8 @@ export class Game
             this.remotePlayers.set(state.id, player);
             this.world.addChild(player);
         }
+
+        player.applyState(state);
      }
 
      private removeRemotePlayer(id: number): void

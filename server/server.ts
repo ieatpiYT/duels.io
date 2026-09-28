@@ -22,7 +22,7 @@ type Player =
     y: number;
     rotation: number;
     socket: WebSocket;
-    roomId: number | null;
+    roomId: number;
     onIntermissionPad: boolean;
 };
 
@@ -44,6 +44,15 @@ const rooms = new Map<number, Room>();
 
 let nextPlayerId = 1;
 let nextRoomId = 1;
+
+const LOBBY_ROOM_ID = 0;
+
+rooms.set(LOBBY_ROOM_ID,
+{
+    id: LOBBY_ROOM_ID,
+    players: new Set<number>(),
+    map: "lobby"
+});
 
 const INTERMISSION_PAD =
 {
@@ -78,7 +87,8 @@ function createInitPacket(id: number): ArrayBuffer
     return buffer;
 }
 
-function createPlayerUpdatePacket(player: Player): ArrayBuffer {
+function createPlayerUpdatePacket(player: Player): ArrayBuffer 
+{
     const buffer = new ArrayBuffer(17);
     const view = new DataView(buffer);
 
@@ -145,14 +155,23 @@ function createRoom(matchPlayers: Player[]): void
     const room: Room = 
     {
         id: roomId,
-        players: new Set(matchPlayers.map(player => player.id)),
+        players: new Set<number>(),
         map: "arena"
     };
 
     rooms.set(roomId, room);
 
+    const lobby = rooms.get(LOBBY_ROOM_ID);
+
     for (const player of matchPlayers) 
     {
+        if (lobby)
+        {
+            lobby.players.delete(player.id);
+        }
+
+        room.players.add(player.id);
+
         player.roomId = roomId;
         player.onIntermissionPad = false;
 
@@ -166,13 +185,16 @@ function checkIntermissionPad(): void
 {
     const waitingPlayers = [...players.values()].filter(
         player =>
-            player.roomId === null &&
+            player.roomId === LOBBY_ROOM_ID &&
             player.onIntermissionPad
     );
 
     if (waitingPlayers.length < MATCH_SIZE) 
     {
+        // Someone left the pad before
+        // the countdown finished.
         padEnteredAt = null;
+
         return;
     }
 
@@ -234,11 +256,19 @@ wss.on('connection', (socket) => {
                 y: 500,
                 rotation: 0,
                 socket,
-                roomId: null,
+                roomId: LOBBY_ROOM_ID,
                 onIntermissionPad: false
             }
 
             players.set(id, player);
+
+            const lobby = rooms.get(LOBBY_ROOM_ID);
+
+            if (lobby)
+            {
+                lobby.players.add(id);
+            }
+
             send(socket, createInitPacket(id));
 
             console.log( `Player joined: ${id}` );
@@ -253,7 +283,7 @@ wss.on('connection', (socket) => {
             player.y = view.getFloat32(5);
             player.rotation = view.getFloat32(9);
 
-            if (player.roomId === null)
+            if (player.roomId === LOBBY_ROOM_ID)
             {
                 player.onIntermissionPad = isOnIntermissionPad(player);
             }
@@ -270,29 +300,48 @@ wss.on('connection', (socket) => {
         const oldRoomId = player.roomId;
         players.delete(id);
 
+        const room = rooms.get(oldRoomId);
+
+        if (room)
+        {
+            room.players.delete(id);
+        }
+
         const packet = createDisconnectPacket(id);
 
-        for (const other of players.values())
+        if (room)
         {
-            if (other.roomId === oldRoomId && other.socket.readyState === WebSocket.OPEN)
+            for (const playerId of room.players)
             {
-                send(other.socket,packet);
+                const other = players.get(playerId);
+
+                if (!other)
+                {
+                    continue;
+                }
+
+                if (other.socket.readyState === WebSocket.OPEN)
+                {
+                    send(other.socket,packet);
+                }
             }
         }
 
-        if (oldRoomId !== null)
+        if (
+            oldRoomId !== LOBBY_ROOM_ID &&
+            room &&
+            room.players.size === 0
+        )
         {
-            const room = rooms.get(oldRoomId);
+            rooms.delete(oldRoomId);
+        }
 
-            if (room)
-            {
-                room.players.delete(id);
-
-                if (room.players.size === 0)
-                {
-                    rooms.delete(oldRoomId);
-                }
-            }
+        // If a player disconnects while
+        // matchmaking is happening, make
+        // sure the countdown can restart.
+        if (oldRoomId === LOBBY_ROOM_ID)
+        {
+            padEnteredAt = null;
         }
 
         player = null;
@@ -303,32 +352,35 @@ wss.on('connection', (socket) => {
 
 // Network tick
 setInterval(() => {
-    for (const player of players.values())
+    for (const room of rooms.values())
     {
-        // Players without rooms remain in lobby
-        if (player.roomId == null)
+        if (room.players.size === 0)
         {
             continue;
         }
 
-        const packet = createPlayerUpdatePacket(player);
-        const room = rooms.get(player.roomId);
-
-        if (!room)
-        {
-            continue;
-        }
-        
         for (const playerId of room.players)
         {
-            const recipient = players.get(playerId);
+            const player = players.get(playerId);
 
-            if (!recipient)
+            if (!player)
             {
                 continue;
             }
 
-            send(recipient.socket, packet);
+            const packet = createPlayerUpdatePacket(player);
+
+            for (const recipientId of room.players)
+            {
+                const recipient = players.get(recipientId);
+
+                if (!recipient)
+                {
+                    continue;
+                }
+
+                send(recipient.socket, packet);
+            }
         }
     }
 }, 50);
@@ -338,7 +390,7 @@ setInterval(() => {
 setInterval(() => {
     for (const player of players.values())
     {
-        if (player.roomId === null)
+        if (player.roomId === LOBBY_ROOM_ID)
         {
             player.onIntermissionPad = isOnIntermissionPad(player);
         }
@@ -346,7 +398,8 @@ setInterval(() => {
 
     const waitingPlayers = [...players.values()]
                 .filter(player =>
-                        player.roomId === null && player.onIntermissionPad
+                        player.roomId === LOBBY_ROOM_ID &&
+                        player.onIntermissionPad
                 );
 
     if (waitingPlayers.length > 0)

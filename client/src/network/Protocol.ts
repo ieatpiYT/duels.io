@@ -1,4 +1,4 @@
-/*
+ /*
 Protocol.ts
 */
 
@@ -84,13 +84,17 @@ export function createPadStatePacket(count: number): ArrayBuffer
     return buffer;
 }
 
-export function createMatchFoundPacket(roomId: number): ArrayBuffer 
+export function createMatchFoundPacket(roomId: number, spawnX: number, spawnY: number): ArrayBuffer 
 {
-    const buffer = new ArrayBuffer(5);
+    const buffer = new ArrayBuffer(13);
     const view = new DataView(buffer);
 
     view.setUint8(0, PacketType.MatchFound);
+
     view.setUint32(1, roomId);
+
+    view.setFloat32(5, spawnX);
+    view.setFloat32(9, spawnY);
 
     return buffer;
 }

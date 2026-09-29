@@ -1,7 +1,3 @@
-/*
-server.ts
-*/
-
 import {WebSocketServer, WebSocket} from 'ws';
 
 enum PacketType
@@ -205,6 +201,33 @@ function createRoom(matchPlayers: Player[]): void
                 spawnY
             )
         );
+    }
+
+    // Tell everyone who is still in the lobby
+    // that these players are no longer in the lobby.
+    if (lobby)
+    {
+        for (const matchPlayer of matchPlayers)
+        {
+            if (!matchPlayer)
+            {
+                continue;
+            }
+
+            const packet = createDisconnectPacket(matchPlayer.id);
+
+            for (const lobbyPlayerId of lobby.players)
+            {
+                const lobbyPlayer = players.get(lobbyPlayerId);
+
+                if (!lobbyPlayer)
+                {
+                    continue;
+                }
+
+                send(lobbyPlayer.socket, packet);
+            }
+        }
     }
 
     console.log(`Created room ${roomId} with ${matchPlayers.length} players.`);

@@ -1,7 +1,3 @@
-/*
-Game.ts
-*/
-
 import {Application, Container} from 'pixi.js';
 import {Player} from "./Player";
 import {Lobby} from "./Lobby";
@@ -173,6 +169,8 @@ export class Game
 
         this.clearRemotePlayers();
 
+        this.localPlayer.removeFromParent();
+
         this.lobby.removeFromParent();
 
         if (this.arena)
@@ -191,6 +189,8 @@ export class Game
         this.localPlayer.x = spawnX;
         this.localPlayer.y = spawnY;
         this.localPlayer.rotation = 0;
+
+        this.world.addChild(this.localPlayer);
 
         this.updateCamera();
 

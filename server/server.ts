@@ -8,7 +8,10 @@ enum PacketType
     Join = 3,
     PlayerDisconnected = 4,
     PadState = 5,
-    MatchFound = 6
+    MatchFound = 6,
+    WebRTCOffer = 7,
+    WebRTCAnswer = 8,
+    WebRTCIceCandidate = 9
 }
 
 type Player = 
@@ -64,7 +67,7 @@ const ARENA_SIZE = 1000;
 
 let padEnteredAt: number | null = null;
 
-function send(socket: WebSocket, buffer: ArrayBuffer): void
+function send(socket: WebSocket, buffer: ArrayBuffer | Buffer): void
 {
     if (socket.readyState === WebSocket.OPEN)
     {
@@ -119,9 +122,9 @@ function createPadStatePacket(count: number): ArrayBuffer
     return buffer;
 }
 
-function createMatchFoundPacket(roomId: number, spawnX: number, spawnY: number): ArrayBuffer 
+function createMatchFoundPacket(roomId: number, spawnX: number, spawnY: number, opponentId: number): ArrayBuffer 
 {
-    const buffer = new ArrayBuffer(13);
+    const buffer = new ArrayBuffer(17);
     const view = new DataView(buffer);
 
     view.setUint8(0, PacketType.MatchFound);
@@ -130,6 +133,56 @@ function createMatchFoundPacket(roomId: number, spawnX: number, spawnY: number):
 
     view.setFloat32(5, spawnX);
     view.setFloat32(9, spawnY);
+
+    view.setUint32(13, opponentId);
+
+    return buffer;
+}
+
+function createWebRTCOfferPacket(offer: string): ArrayBuffer
+{
+    const encoder = new TextEncoder();
+    const data = encoder.encode(offer);
+
+    const buffer = new ArrayBuffer(5 + data.byteLength);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.WebRTCOffer);
+    view.setUint32(1, data.byteLength);
+
+    new Uint8Array(buffer, 5).set(data);
+
+    return buffer;
+}
+
+function createWebRTCAnswerPacket(answer: string): ArrayBuffer
+{
+    const encoder = new TextEncoder();
+    const data = encoder.encode(answer);
+
+    const buffer = new ArrayBuffer(5 + data.byteLength);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.WebRTCAnswer);
+    view.setUint32(1, data.byteLength);
+
+    new Uint8Array(buffer, 5).set(data);
+
+    return buffer;
+}
+
+function createWebRTCIceCandidatePacket(candidate: string): ArrayBuffer
+{
+    const encoder = new TextEncoder();
+    const data = encoder.encode(candidate);
+
+    const buffer = new ArrayBuffer(5 + data.byteLength);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, PacketType.WebRTCIceCandidate);
+    view.setUint32(1, data.byteLength);
+
+    new Uint8Array(buffer, 5).set(data);
 
     return buffer;
 }
@@ -193,18 +246,29 @@ function createRoom(matchPlayers: Player[]): void
         player.y = spawnY;
         player.rotation = 0;
 
+        let opponentId = 0;
+
+        if (index === 0 && matchPlayers[1])
+        {
+            opponentId = matchPlayers[1].id;
+        }
+
+        if (index === 1 && matchPlayers[0])
+        {
+            opponentId = matchPlayers[0].id;
+        }
+
         send(
             player.socket,
             createMatchFoundPacket(
                 roomId,
                 spawnX,
-                spawnY
+                spawnY,
+                opponentId
             )
         );
     }
 
-    // Tell everyone who is still in the lobby
-    // that these players are no longer in the lobby.
     if (lobby)
     {
         for (const matchPlayer of matchPlayers)
@@ -271,6 +335,37 @@ function checkIntermissionPad(): void
     padEnteredAt = null;
 }
 
+function forwardToRoom(
+    roomId: number,
+    senderId: number,
+    packet: Buffer
+): void
+{
+    const room = rooms.get(roomId);
+
+    if (!room)
+    {
+        return;
+    }
+
+    for (const playerId of room.players)
+    {
+        if (playerId === senderId)
+        {
+            continue;
+        }
+
+        const player = players.get(playerId);
+
+        if (!player)
+        {
+            continue;
+        }
+
+        send(player.socket, packet);
+    }
+}
+
 wss.on('connection', (socket) => {
     const id = nextPlayerId++;
 
@@ -333,6 +428,89 @@ wss.on('connection', (socket) => {
             {
                 player.onIntermissionPad = isOnIntermissionPad(player);
             }
+
+            return;
+        }
+
+        if (packetType === PacketType.WebRTCOffer && player)
+        {
+            const length = view.getUint32(1);
+
+            const decoder = new TextDecoder();
+
+            const offer = decoder.decode(
+                new Uint8Array(
+                    buffer.buffer,
+                    buffer.byteOffset + 5,
+                    length
+                )
+            );
+
+            console.log(
+                `WebRTC offer from player ${player.id}`
+            );
+
+            forwardToRoom(
+                player.roomId,
+                player.id,
+                buffer
+            );
+
+            return;
+        }
+
+        if (packetType === PacketType.WebRTCAnswer && player)
+        {
+            const length = view.getUint32(1);
+
+            const decoder = new TextDecoder();
+
+            const answer = decoder.decode(
+                new Uint8Array(
+                    buffer.buffer,
+                    buffer.byteOffset + 5,
+                    length
+                )
+            );
+
+            console.log(
+                `WebRTC answer from player ${player.id}`
+            );
+
+            forwardToRoom(
+                player.roomId,
+                player.id,
+                buffer
+            );
+
+            return;
+        }
+
+        if (packetType === PacketType.WebRTCIceCandidate && player)
+        {
+            const length = view.getUint32(1);
+
+            const decoder = new TextDecoder();
+
+            const candidate = decoder.decode(
+                new Uint8Array(
+                    buffer.buffer,
+                    buffer.byteOffset + 5,
+                    length
+                )
+            );
+
+            console.log(
+                `WebRTC ICE candidate from player ${player.id}`
+            );
+
+            forwardToRoom(
+                player.roomId,
+                player.id,
+                buffer
+            );
+
+            return;
         }
     });
 

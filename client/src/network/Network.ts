@@ -1,13 +1,10 @@
-/*
-Network.ts
-*/
-
 import type {PlayerState} from "../game/PlayerState";
 import {
     PacketType,
     createJoinPacket,
     createPositionPacket
 } from './Protocol';
+import {WebRTCConnection} from './WebRTC';
 
 export interface NetworkCallbacks
 {
@@ -32,13 +29,25 @@ export interface NetworkCallbacks
         spawnX: number,
         spawnY: number
     ) => void;
+
+    onWebRTCOpen?: () => void;
+
+    onWebRTCMessage?: (
+        data: ArrayBuffer
+    ) => void;
 }
 
 export class Network
 {
     private socket: WebSocket;
+
     public id: number | null = null;
+
     private callbacks: NetworkCallbacks;
+
+    private webRTC: WebRTCConnection | null = null;
+
+    private opponentId: number | null = null;
 
     constructor(callbacks: NetworkCallbacks = {})
     {
@@ -121,6 +130,13 @@ export class Network
                 const roomId = view.getUint32(1);
                 const spawnX = view.getFloat32(5);
                 const spawnY = view.getFloat32(9);
+                const opponentId = view.getUint32(13);
+
+                this.opponentId = opponentId;
+
+                console.log(
+                    `Matched with player ${opponentId}`
+                );
 
                 this.callbacks.onMatchFound?.(
                     roomId,
@@ -128,9 +144,184 @@ export class Network
                     spawnY
                 );
 
+                this.startWebRTC();
+
+                break;
+            }
+
+            case PacketType.WebRTCOffer:
+            {
+                const length = view.getUint32(1);
+
+                const decoder = new TextDecoder();
+
+                const offer =
+                    decoder.decode(
+                        new Uint8Array(
+                            buffer,
+                            5,
+                            length
+                        )
+                    );
+
+                this.handleWebRTCOffer(
+                    offer
+                );
+
+                break;
+            }
+
+            case PacketType.WebRTCAnswer:
+            {
+                const length = view.getUint32(1);
+
+                const decoder = new TextDecoder();
+
+                const answer =
+                    decoder.decode(
+                        new Uint8Array(
+                            buffer,
+                            5,
+                            length
+                        )
+                    );
+
+                this.handleWebRTCAnswer(
+                    answer
+                );
+
+                break;
+            }
+
+            case PacketType.WebRTCIceCandidate:
+            {
+                const length = view.getUint32(1);
+
+                const decoder = new TextDecoder();
+
+                const candidate =
+                    decoder.decode(
+                        new Uint8Array(
+                            buffer,
+                            5,
+                            length
+                        )
+                    );
+
+                this.handleWebRTCIceCandidate(
+                    candidate
+                );
+
                 break;
             }
         }
+    }
+
+    private startWebRTC(): void
+    {
+        if (this.id === null)
+        {
+            return;
+        }
+
+        if (this.opponentId === null)
+        {
+            return;
+        }
+
+        const isOfferer =
+            this.id < this.opponentId;
+
+        console.log(
+            `Starting WebRTC as ${
+                isOfferer
+                    ? 'offerer'
+                    : 'answerer'
+            }`
+        );
+
+        this.webRTC =
+            new WebRTCConnection(
+                isOfferer,
+                packet => {
+                    this.socket.send(packet);
+                },
+                {
+                    onOpen: () => {
+                        console.log(
+                            'WebRTC connection established!'
+                        );
+
+                        this.callbacks.onWebRTCOpen?.();
+                    },
+
+                    onMessage: data => {
+                        this.callbacks.onWebRTCMessage?.(
+                            data
+                        );
+                    },
+
+                    onClose: () => {
+                        console.log(
+                            'WebRTC connection closed'
+                        );
+                    },
+
+                    onError: error => {
+                        console.error(
+                            'WebRTC error:',
+                            error
+                        );
+                    }
+                }
+            );
+
+        if (isOfferer)
+        {
+            this.webRTC.createOffer();
+        }
+    }
+
+    private async handleWebRTCOffer(
+        offer: string
+    ): Promise<void>
+    {
+        if (!this.webRTC)
+        {
+            return;
+        }
+
+        await this.webRTC.handleOffer(
+            offer
+        );
+    }
+
+    private async handleWebRTCAnswer(
+        answer: string
+    ): Promise<void>
+    {
+        if (!this.webRTC)
+        {
+            return;
+        }
+
+        await this.webRTC.handleAnswer(
+            answer
+        );
+    }
+
+    private async handleWebRTCIceCandidate(
+        candidate: string
+    ): Promise<void>
+    {
+        if (!this.webRTC)
+        {
+            return;
+        }
+
+        await this.webRTC.handleIceCandidate(
+            candidate
+        );
     }
 
     join(): void
@@ -140,16 +331,44 @@ export class Network
             return;
         }
 
-        this.socket.send(createJoinPacket());
+        this.socket.send(
+            createJoinPacket()
+        );
     }
 
-    sendPosition(x: number, y: number, rotation: number): void
+    sendPosition(
+        x: number,
+        y: number,
+        rotation: number
+    ): void
     {
         if (this.socket.readyState !== WebSocket.OPEN)
         {
             return;
         }
 
-        this.socket.send(createPositionPacket(x, y, rotation));
+        this.socket.send(
+            createPositionPacket(
+                x,
+                y,
+                rotation
+            )
+        );
+    }
+
+    sendWebRTCData(
+        data: ArrayBuffer
+    ): void
+    {
+        this.webRTC?.send(
+            data
+        );
+    }
+
+    disconnectWebRTC(): void
+    {
+        this.webRTC?.close();
+
+        this.webRTC = null;
     }
 }

@@ -1,7 +1,3 @@
- /*
-Protocol.ts
-*/
-
 export const PacketType = 
 {
     Init: 0,
@@ -10,7 +6,10 @@ export const PacketType =
     Join: 3,
     PlayerDisconnected: 4,
     PadState: 5,
-    MatchFound: 6
+    MatchFound: 6,
+    WebRTCOffer: 7,
+    WebRTCAnswer: 8,
+    WebRTCIceCandidate: 9
 } as const;
 
 export function createJoinPacket(): ArrayBuffer
@@ -84,9 +83,14 @@ export function createPadStatePacket(count: number): ArrayBuffer
     return buffer;
 }
 
-export function createMatchFoundPacket(roomId: number, spawnX: number, spawnY: number): ArrayBuffer 
+export function createMatchFoundPacket(
+    roomId: number,
+    spawnX: number,
+    spawnY: number,
+    opponentId: number
+): ArrayBuffer 
 {
-    const buffer = new ArrayBuffer(13);
+    const buffer = new ArrayBuffer(17);
     const view = new DataView(buffer);
 
     view.setUint8(0, PacketType.MatchFound);
@@ -96,5 +100,56 @@ export function createMatchFoundPacket(roomId: number, spawnX: number, spawnY: n
     view.setFloat32(5, spawnX);
     view.setFloat32(9, spawnY);
 
+    view.setUint32(13, opponentId);
+
     return buffer;
+}
+
+function createStringPacket(
+    packetType: number,
+    value: string
+): ArrayBuffer
+{
+    const encoder = new TextEncoder();
+    const data = encoder.encode(value);
+
+    const buffer = new ArrayBuffer(5 + data.byteLength);
+    const view = new DataView(buffer);
+
+    view.setUint8(0, packetType);
+    view.setUint32(1, data.byteLength);
+
+    new Uint8Array(buffer, 5).set(data);
+
+    return buffer;
+}
+
+export function createWebRTCOfferPacket(
+    offer: string
+): ArrayBuffer
+{
+    return createStringPacket(
+        PacketType.WebRTCOffer,
+        offer
+    );
+}
+
+export function createWebRTCAnswerPacket(
+    answer: string
+): ArrayBuffer
+{
+    return createStringPacket(
+        PacketType.WebRTCAnswer,
+        answer
+    );
+}
+
+export function createWebRTCIceCandidatePacket(
+    candidate: string
+): ArrayBuffer
+{
+    return createStringPacket(
+        PacketType.WebRTCIceCandidate,
+        candidate
+    );
 }

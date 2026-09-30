@@ -1,4 +1,5 @@
-#gameCanvas {
+#gameCanvas 
+{
   position: absolute;
   top: 0;
   left: 0;
@@ -7,19 +8,35 @@
   z-index: 1;
 }
 
-#hitext {
-  position: absolute;
-  z-index: 3;
-}
-
-.flex-container {
+.flex-container 
+{
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
 
-.play-button {
+#enterName
+{
+  width: 250px;
+  height: 50px;
+  padding: 0 15px;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  font-size: 24px;
+  border: none;
+  border-radius: 12px;
+  outline: none;
+}
+
+#enterName::placeholder
+{
+  color: #999;
+  opacity: 0.7;
+}
+
+.play-button 
+{
   width: 250px;
   height: 80px;
   font-size: 35px;
@@ -33,18 +50,21 @@
   box-shadow: 0 5px 0 #438642;
 }
 
-.play-button:active {
+.play-button:active 
+{
   transform: translateY(4px);
   box-shadow: 0 1px 0 #438642;
 }
 
-.menu-overlay {
+.menu-overlay 
+{
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 2;
@@ -54,11 +74,13 @@
   transition: opacity 0.3s ease;
 }
 
-.hidden {
+.hidden 
+{
   display: none !important;
 }
 
-@keyframes professionalColorShift {
+@keyframes professionalColorShift 
+{
   0% {
     background-position: 0% 50%;
   }

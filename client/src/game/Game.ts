@@ -66,9 +66,11 @@ export class Game
         });
     }
 
-    start(): void
+    start(name: string): void
     {
-        this.network.join();
+        this.localPlayer.setName(name);
+
+        this.network.join(name);
         this.playing = true;
 
         this.app.stage.addChild(this.world);

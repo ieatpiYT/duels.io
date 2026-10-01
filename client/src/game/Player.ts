@@ -2,7 +2,7 @@
 Player.ts
 */
 
-import {Container, Graphics} from "pixi.js";
+import {Container, Graphics, Text} from "pixi.js";
 import {Input} from './Input'
 import type {PlayerState} from "./PlayerState";
 
@@ -12,6 +12,7 @@ export class Player extends Container
     leftFist: Graphics;
     rightFist: Graphics;
     body: Graphics;
+    nameText: Text;
 
     constructor(speed = 4)
     {
@@ -35,7 +36,34 @@ export class Player extends Container
         this.rightFist.x = 20;
         this.rightFist.y = 15; 
 
-        this.addChild(this.body, this.leftFist, this.rightFist);
+        this.nameText = new Text({
+            text: "Player",
+            style: {
+                fontFamily: "Arial",
+                fontSize: 14,
+                fill: "white",
+                stroke: {
+                    color: "black",
+                    width: 3
+                }
+            }
+        });
+
+        this.nameText.anchor.set(0.5, 0);
+        this.nameText.x = 0;
+        this.nameText.y = 28;
+
+        this.addChild(
+            this.body,
+            this.leftFist,
+            this.rightFist,
+            this.nameText
+        );
+    }
+
+    setName(name: string): void
+    {
+        this.nameText.text = name || "Player";
     }
 
     applyState(state: PlayerState): void
@@ -43,12 +71,19 @@ export class Player extends Container
         this.x = state.x;
         this.y = state.y;
         this.rotation = state.rotation;
+
+        this.nameText.text = state.name || "Player";
+
+        this.nameText.rotation = -this.rotation;
+        this.nameText.x = 0;
+        this.nameText.y = 28;
     }
 
     getState(id: number): PlayerState
     {
         return {
             id,
+            name: this.nameText.text,
             x: this.x,
             y: this.y,
             rotation: this.rotation
@@ -58,6 +93,10 @@ export class Player extends Container
     lookAt(targetX: number, targetY: number): void
     {
         this.rotation = Math.atan2(targetY - this.y, targetX - this.x);
+
+        this.nameText.rotation = -this.rotation;
+        this.nameText.x = 0;
+        this.nameText.y = 28;
     }
 
     move(input: Input): void

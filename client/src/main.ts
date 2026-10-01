@@ -8,6 +8,7 @@ import {Game} from "./game/Game";
 let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const playButton = document.getElementById('playButton') as HTMLButtonElement;
 const menuOverlay = document.getElementById('menuOverlay') as HTMLDivElement;
+const playerNameInput = document.getElementById('playerName') as HTMLInputElement;
 
 const app = new Application();
 
@@ -24,7 +25,9 @@ async function initGame(): Promise<void>
     const game = new Game(app);
     
     playButton.addEventListener('click', () => {
-        game.start();
+        const name = playerNameInput.value.trim().slice(0, 16);
+
+        game.start(name || "Player");
         menuOverlay.classList.add('hidden');
     })
 }

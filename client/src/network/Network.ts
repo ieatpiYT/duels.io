@@ -89,12 +89,30 @@ export class Network
 
             case PacketType.PlayerUpdate:
             {
-                const state: PlayerState = 
+                const id = view.getUint32(1);
+                const x = view.getFloat32(5);
+                const y = view.getFloat32(9);
+                const rotation = view.getFloat32(13);
+
+                const nameLength = view.getUint32(17);
+
+                const decoder = new TextDecoder();
+
+                const name = decoder.decode(
+                    new Uint8Array(
+                        buffer,
+                        21,
+                        nameLength
+                    )
+                );
+
+                const state: PlayerState =
                 {
-                    id: view.getUint32(1),
-                    x: view.getFloat32(5),
-                    y: view.getFloat32(9),
-                    rotation: view.getFloat32(13)
+                    id,
+                    name,
+                    x,
+                    y,
+                    rotation
                 };
 
                 if (state.id === this.id)
@@ -324,7 +342,7 @@ export class Network
         );
     }
 
-    join(): void
+    join(name: string): void
     {
         if (this.socket.readyState !== WebSocket.OPEN)
         {
@@ -332,7 +350,7 @@ export class Network
         }
 
         this.socket.send(
-            createJoinPacket()
+            createJoinPacket(name)
         );
     }
 

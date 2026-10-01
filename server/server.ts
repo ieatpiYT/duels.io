@@ -17,6 +17,7 @@ enum PacketType
 type Player = 
 {
     id: number;
+    name: string;
     x: number;
     y: number;
     rotation: number;
@@ -88,7 +89,13 @@ function createInitPacket(id: number): ArrayBuffer
 
 function createPlayerUpdatePacket(player: Player): ArrayBuffer 
 {
-    const buffer = new ArrayBuffer(17);
+    const encoder = new TextEncoder();
+    const nameData = encoder.encode(player.name);
+
+    const buffer = new ArrayBuffer(
+        21 + nameData.byteLength
+    );
+
     const view = new DataView(buffer);
 
     view.setUint8(0, PacketType.PlayerUpdate);
@@ -96,6 +103,9 @@ function createPlayerUpdatePacket(player: Player): ArrayBuffer
     view.setFloat32(5, player.x);
     view.setFloat32(9, player.y);
     view.setFloat32(13, player.rotation);
+    view.setUint32(17, nameData.byteLength);
+
+    new Uint8Array(buffer, 21).set(nameData);
 
     return buffer;
 }
@@ -391,9 +401,22 @@ wss.on('connection', (socket) => {
                 return;
             }
 
+            const nameLength = view.getUint32(1);
+
+            const decoder = new TextDecoder();
+
+            const name = decoder.decode(
+                new Uint8Array(
+                    buffer.buffer,
+                    buffer.byteOffset + 5,
+                    nameLength
+                )
+            ).trim().slice(0, 16);
+
             player = 
             {
                 id, 
+                name: name || "Player",
                 x: 500,
                 y: 500,
                 rotation: 0,
@@ -413,7 +436,7 @@ wss.on('connection', (socket) => {
 
             send(socket, createInitPacket(id));
 
-            console.log(`Player joined: ${id}`);
+            console.log(`Player joined: ${id} (${player.name})`);
 
             return;
         }

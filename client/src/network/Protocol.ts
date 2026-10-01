@@ -12,12 +12,18 @@ export const PacketType =
     WebRTCIceCandidate: 9
 } as const;
 
-export function createJoinPacket(): ArrayBuffer
+export function createJoinPacket(name: string): ArrayBuffer
 {
-    const buffer = new ArrayBuffer(1);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(name);
+
+    const buffer = new ArrayBuffer(5 + data.byteLength);
     const view = new DataView(buffer);
 
     view.setUint8(0 , PacketType.Join);
+    view.setUint32(1, data.byteLength);
+
+    new Uint8Array(buffer, 5).set(data);
 
     return buffer;
 }

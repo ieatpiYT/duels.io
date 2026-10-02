@@ -38,11 +38,13 @@ export class Player extends Container
 
         this.nameText = new Text({
             text: "Player",
-            style: {
+            style: 
+            {
                 fontFamily: "Arial",
                 fontSize: 14,
-                fill: "white",
-                stroke: {
+                fill: "cyan",
+                stroke: 
+                {
                     color: "black",
                     width: 3
                 }

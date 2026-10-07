@@ -52,14 +52,11 @@ export class Player extends Container
         });
 
         this.nameText.anchor.set(0.5, 0);
-        this.nameText.x = 0;
-        this.nameText.y = 28;
 
         this.addChild(
             this.body,
             this.leftFist,
-            this.rightFist,
-            this.nameText
+            this.rightFist
         );
     }
 
@@ -75,10 +72,6 @@ export class Player extends Container
         this.rotation = state.rotation;
 
         this.nameText.text = state.name || "Player";
-
-        this.nameText.rotation = -this.rotation;
-        this.nameText.x = 0;
-        this.nameText.y = 28;
     }
 
     getState(id: number): PlayerState
@@ -95,10 +88,6 @@ export class Player extends Container
     lookAt(targetX: number, targetY: number): void
     {
         this.rotation = Math.atan2(targetY - this.y, targetX - this.x);
-
-        this.nameText.rotation = -this.rotation;
-        this.nameText.x = 0;
-        this.nameText.y = 28;
     }
 
     move(input: Input): void

@@ -1,3 +1,7 @@
+/*
+Game.ts
+*/
+
 import {Application, Container} from 'pixi.js';
 import {Player} from "./Player";
 import {Lobby} from "./Lobby";
@@ -61,6 +65,9 @@ export class Game
         this.world.addChild(this.lobby);
         this.world.addChild(this.localPlayer);
 
+        // Nametag is NOT a child of Player.
+        this.world.addChild(this.localPlayer.nameText);
+
         this.app.ticker.add(() => {
             this.update();
         });
@@ -94,6 +101,17 @@ export class Game
             worldMouseY
         );
 
+        this.updateNameTag(
+            this.localPlayer
+        );
+
+        for (const player of this.remotePlayers.values())
+        {
+            this.updateNameTag(
+                player
+            );
+        }
+
         this.updateCamera();
 
         this.network.sendPosition(
@@ -101,6 +119,16 @@ export class Game
             this.localPlayer.y,
             this.localPlayer.rotation
         );
+    }
+
+    private updateNameTag(player: Player): void
+    {
+        player.nameText.x = player.x;
+        player.nameText.y = player.y + 28;
+
+        // The nametag is a child of world, NOT Player.
+        // Therefore its rotation is completely independent.
+        player.nameText.rotation = 0;
     }
 
     private updateCamera(): void
@@ -130,10 +158,18 @@ export class Game
             player = new Player(4);
 
             this.remotePlayers.set(state.id, player);
+
             this.world.addChild(player);
+
+            // Nametag is separate from the rotating player.
+            this.world.addChild(player.nameText);
         }
 
         player.applyState(state);
+
+        this.updateNameTag(
+            player
+        );
     }
 
     private removeRemotePlayer(id: number): void
@@ -144,6 +180,8 @@ export class Game
         {
             return;
         }
+
+        player.nameText.removeFromParent();
 
         player.removeFromParent();
 
@@ -156,7 +194,10 @@ export class Game
     {
         for (const player of this.remotePlayers.values())
         {
+            player.nameText.removeFromParent();
+
             player.removeFromParent();
+
             player.destroy();
         }
 
@@ -193,6 +234,10 @@ export class Game
         this.localPlayer.rotation = 0;
 
         this.world.addChild(this.localPlayer);
+
+        this.updateNameTag(
+            this.localPlayer
+        );
 
         this.updateCamera();
 

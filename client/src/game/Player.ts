@@ -42,7 +42,7 @@ export class Player extends Container
             {
                 fontFamily: "Arial",
                 fontSize: 14,
-                fill: "cyan",
+                fill: "white",
                 stroke: 
                 {
                     color: "black",

@@ -13,7 +13,7 @@ A browser-based multiplayer 1v1 arena game
    ```bash
    cd server && npm install
    ```
-3. Start the game server:
+3. Start the game server with:
    ```bash
    npm start
    ```
